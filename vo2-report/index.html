@@ -1,1 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VO₂ Max Report Builder — HMS FIFA Medical Centre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#0A0F1E;
+  --surface:#0D1525;
+  --panel:#111C30;
+  --border:#1E3050;
+  --border-hi:#2A4570;
+  --accent:#00C9A7;
+  --accent-dim:#00C9A720;
+  --accent-mid:#00C9A760;
+  --blue:#1E75BE;
+  --navy:#0D2A52;
+  --text:#C8DDEF;
+  --muted:#4A6A8A;
+  --dim:#1E3050;
+  --r-navy:#0D2A52;
+  --r-blue:#1E75BE;
+  --r-teal:#008F88;
+  --r-green:#2D7A3F;
+  --r-gold:#B8902A;
+  --font-ui:'Syne',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{height:100%;font-family:var(--font-body);background:var(--ink);color:var(--text);overflow:hidden;}
 
+/* ═══════════════════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════════════════ */
+.app{display:flex;height:100vh;}
+
+/* ─── LEFT FORM PANEL ─────────────────────────────────────────── */
+.fp{
+  width:270px;min-width:270px;height:100%;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.fp-head{
+  padding:18px 16px 14px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.fp-brand{font-size:9px;letter-spacing:.22em;color:var(--accent-mid);font-family:var(--font-ui);font-weight:600;margin-bottom:3px;}
+.fp-title{font-size:15px;font-weight:800;color:#E8F2FF;font-family:var(--font-ui);letter-spacing:.02em;}
+.fp-sub{font-size:9px;color:var(--dim);letter-spacing:.14em;font-family:var(--font-mono);margin-top:2px;}
+
+.fp-status{
+  display:flex;align-items:center;gap:6px;
+  margin:12px 16px 0;padding:6px 10px;
+  background:#080E1C;border:1px solid var(--border);border-radius:4px;
+}
+.s-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+.s-txt{font-size:9px;letter-spacing:.12em;font-weight:700;font-family:var(--font-ui);transition:color .3s;}
+
+.fp-scroll{flex:1;overflow-y:auto;padding:0 16px 60px;}
+.fp-scroll::-webkit-scrollbar{width:3px;}
+.fp-scroll::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* Section headers */
+.sec{display:flex;align-items:center;gap:8px;margin:18px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.sec-n{
+  width:18px;height:18px;border-radius:50%;
+  background:var(--ink);border:1px solid var(--accent-mid);
+  color:var(--accent);font-size:8px;font-weight:700;font-family:var(--font-mono);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sec-t{font-size:9.5px;letter-spacing:.16em;color:var(--accent);font-weight:700;font-family:var(--font-ui);}
+
+/* Form elements */
+.fl{display:block;font-size:8.5px;letter-spacing:.12em;color:var(--accent);font-weight:600;margin-bottom:3px;font-family:var(--font-ui);}
+.fl span{color:var(--border-hi);font-weight:400;}
+.fi{
+  width:100%;background:transparent;border:none;
+  border-bottom:1px solid var(--border);
+  color:#D8EEFF;font-size:13px;padding:3px 0 4px;
+  outline:none;font-family:var(--font-body);
+  transition:border-color .2s;margin-bottom:10px;
+}
+.fi:focus{border-bottom-color:var(--accent);}
+.fi.mono{font-family:var(--font-mono);font-size:16px;font-weight:500;}
+.fi-ta{
+  width:100%;background:#080E1C;
+  border:1px solid var(--border);border-radius:3px;
+  color:#D0E4F8;font-size:11px;padding:7px;
+  outline:none;resize:vertical;font-family:var(--font-body);
+  line-height:1.55;margin-bottom:9px;
+  transition:border-color .2s;
+}
+.fi-ta:focus{border-color:var(--accent-mid);}
+.gr2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.gr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* Gender toggle */
+.gtgl{display:flex;gap:6px;margin-bottom:10px;}
+.gtb{
+  flex:1;padding:5px;background:transparent;
+  border:1px solid var(--border);border-radius:3px;
+  color:var(--muted);font-size:9px;font-weight:700;
+  letter-spacing:.08em;cursor:pointer;
+  font-family:var(--font-ui);transition:all .15s;
+}
+.gtb.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+
+/* Auto-calc chips */
+.achip{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 8px;background:#080E1C;
+  border:1px solid var(--border);border-radius:3px;margin-bottom:9px;
+}
+.achip-l{font-size:8px;letter-spacing:.1em;color:var(--muted);font-family:var(--font-ui);}
+.achip-v{font-size:13px;font-weight:500;font-family:var(--font-mono);}
+
+/* Classification badge */
+.clsbdg{padding:7px 9px;border-radius:3px;margin-bottom:9px;border:1px solid transparent;}
+.clsbdg-l{font-size:8px;letter-spacing:.1em;color:var(--muted);margin-bottom:3px;font-family:var(--font-ui);}
+.clsbdg-n{font-size:13px;font-weight:700;font-family:var(--font-ui);}
+
+/* Buttons */
+.aibtn{
+  width:100%;padding:8px;background:transparent;
+  border:1px solid var(--accent-mid);border-radius:3px;
+  color:var(--accent);font-size:9px;font-weight:700;
+  letter-spacing:.12em;cursor:pointer;margin-bottom:9px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-family:var(--font-ui);transition:background .15s;
+}
+.aibtn:hover:not(:disabled){background:var(--accent-dim);}
+.aibtn:disabled{opacity:.3;cursor:default;}
+
+/* Upload zone */
+.upz{
+  border:1px dashed var(--border);border-radius:3px;
+  padding:12px;text-align:center;cursor:pointer;
+  color:var(--muted);font-size:10px;margin-bottom:6px;
+  transition:border-color .15s;display:block;font-family:var(--font-body);
+}
+.upz:hover{border-color:var(--accent);}
+.upz-icon{font-size:20px;margin-bottom:4px;}
+
+/* API key field */
+.api-wrap{
+  margin-bottom:9px;padding:8px;
+  background:#080E1C;border:1px solid var(--border);border-radius:3px;
+}
+.api-note{font-size:8px;color:var(--muted);margin-top:4px;line-height:1.4;}
+
+/* ─── RIGHT REPORT PANEL ──────────────────────────────────────── */
+.rp{flex:1;display:flex;flex-direction:column;background:#0B1422;min-width:0;}
+
+.rbar{
+  padding:9px 16px;background:#080E1C;
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
+}
+.rbar-l{font-size:8.5px;color:var(--muted);letter-spacing:.14em;font-family:var(--font-ui);}
+
+.pbtn{
+  padding:6px 16px;background:var(--accent);border:none;border-radius:3px;
+  color:#040810;font-size:10px;font-weight:800;letter-spacing:.1em;
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  font-family:var(--font-ui);transition:opacity .15s;
+}
+.pbtn:hover{opacity:.85;}
+.pbtn svg{width:14px;height:14px;fill:none;stroke:#040810;stroke-width:2;}
+
+.rscroll{flex:1;overflow-y:auto;padding:24px 20px;display:flex;justify-content:center;}
+.rscroll::-webkit-scrollbar{width:4px;}
+.rscroll::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* ═══════════════════════════════════════════════════════════════════
+   A4 REPORT
+═══════════════════════════════════════════════════════════════════ */
+.a4{
+  width:680px;background:white;color:#1A1A2E;
+  font-family:'Inter',sans-serif;
+  padding:32px 40px 44px;
+  box-shadow:0 12px 60px rgba(0,0,0,.6);
+  flex-shrink:0;border-radius:2px;
+}
+
+/* Report internal */
+.rh{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid var(--r-blue);padding-bottom:10px;margin-bottom:14px;}
+.rh-hms{font-size:28px;font-weight:900;color:var(--r-navy);letter-spacing:-.02em;font-family:'Syne',sans-serif;}
+.rh-div{display:inline-block;width:1.5px;height:20px;background:var(--r-blue);margin:0 8px;vertical-align:middle;}
+.rh-fifa{font-size:13px;font-weight:800;color:var(--r-blue);letter-spacing:.1em;line-height:1.1;}
+.rh-coe{font-size:7px;color:var(--r-navy);font-weight:700;letter-spacing:.12em;}
+.rh-ar{font-size:9px;color:#8A9AB0;margin-top:3px;}
+.rh-date{font-size:11px;color:#7A8A9A;text-align:right;}
+
+.rt{text-align:center;margin-bottom:14px;}
+.rt-main{font-size:18px;font-weight:800;color:var(--r-navy);letter-spacing:.06em;font-family:'Syne',sans-serif;}
+.rt-sub{font-size:10px;color:var(--r-blue);letter-spacing:.14em;margin-top:2px;}
+.rt-rule{width:60px;height:2px;background:var(--r-blue);margin:8px auto 0;}
+
+/* Patient bar */
+.rpat{display:grid;grid-template-columns:1fr .55fr .42fr .72fr;background:#EBF3FB;border-radius:4px;margin-bottom:8px;overflow:hidden;}
+.rpat-c{padding:7px 10px;border-right:1px solid #C8D8E8;}
+.rpat-c:last-child{border-right:none;}
+.rpat-c:nth-child(even){background:#F0F5FA;}
+.rpat-l{font-size:7.5px;color:#7A9AB8;letter-spacing:.1em;font-weight:700;}
+.rpat-v{font-size:12px;font-weight:700;color:var(--r-navy);margin-top:1px;}
+
+/* Protocol */
+.rprot{background:#F0F5FA;padding:5px 10px;border-left:3px solid var(--r-blue);font-size:10px;color:#3A5A7A;margin-bottom:10px;border-radius:0 3px 3px 0;}
+
+/* Section header bar */
+.rsb{padding:4px 10px;font-size:9px;font-weight:800;letter-spacing:.12em;color:white;font-family:'Syne',sans-serif;}
+
+/* Metric cards */
+.rcards{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #C8D8E8;border-top:none;margin-bottom:10px;}
+.rcard{text-align:center;border-right:1px solid #D8E8F0;}
+.rcard:last-child{border-right:none;}
+.rcard-hdr{font-size:8px;font-weight:800;color:white;padding:3px 4px;letter-spacing:.07em;font-family:'Syne',sans-serif;}
+.rcard-val{font-size:26px;font-weight:700;font-family:'DM Mono',monospace;padding:8px 4px 2px;line-height:1;}
+.rcard-unit{font-size:8.5px;color:#7A8A9A;padding:0 4px 8px;}
+
+/* VO2 scale */
+.rscale{padding:7px 10px;background:#FAFCFE;border:1px solid #D8E8F0;border-radius:3px;margin-bottom:10px;}
+.rscale-lbl{font-size:7.5px;color:#8A9AB8;letter-spacing:.12em;font-weight:700;margin-bottom:5px;font-family:'Syne',sans-serif;}
+
+/* 2-col */
+.r2c{display:grid;grid-template-columns:.44fr .56fr;border:1px solid #C8D8E8;margin-bottom:10px;}
+.rscan{border-right:1px solid #C8D8E8;}
+.rscan-ph{height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#F8FAFC;color:#B0C4D8;font-size:10.5px;gap:5px;}
+.rscan-ph svg{width:28px;height:28px;opacity:.4;}
+.ranal{display:flex;flex-direction:column;}
+.ranal-txt{flex:1;padding:9px 11px;font-size:11px;line-height:1.7;color:#2A3A4A;}
+.rrec-txt{padding:8px 11px 9px;background:#EBF3FB;font-size:11px;line-height:1.7;color:#2A3A4A;}
+
+/* Footer */
+.rfoot{margin-top:14px;padding-top:8px;border-top:2.5px solid var(--r-blue);display:flex;justify-content:space-between;align-items:flex-end;}
+.rfoot-so{font-size:10.5px;color:#7A8A9A;line-height:1.6;}
+.rfoot-sn{font-size:14px;font-weight:700;font-style:italic;color:var(--r-navy);font-family:'Syne',sans-serif;}
+.rfoot-st{font-size:10.5px;font-style:italic;color:var(--r-blue);}
+.rfoot-ct{font-size:8.5px;color:#9AAABB;text-align:center;margin-top:10px;}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════════════════════════════ */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  @page{size:A4 portrait;margin:0;}
+  html,body{margin:0;padding:0;background:white!important;overflow:visible!important;height:auto!important;}
+  .fp,.rbar{display:none!important;}
+  .app{display:block;height:auto;}
+  .rp{background:white!important;display:block;height:auto;}
+  .rscroll{padding:0;display:block;overflow:visible;justify-content:flex-start;height:auto;}
+  .a4{
+    width:100%!important;max-width:none!important;
+    box-shadow:none!important;border-radius:0!important;
+    padding:14mm 16mm 16mm!important;
+    page-break-inside:avoid;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       LEFT: FORM PANEL
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="fp">
+    <div class="fp-head">
+      <div class="fp-brand">HMS FIFA MEDICAL CENTRE</div>
+      <div class="fp-title">VO₂ MAX BUILDER</div>
+      <div class="fp-sub">REPORT ENGINE v2.1</div>
+    </div>
+    <div style="padding:0 16px">
+      <div class="fp-status" style="margin:12px 0 0">
+        <div class="s-dot" id="sdot" style="background:#E24B4A"></div>
+        <span class="s-txt" id="stxt" style="color:#E24B4A">INCOMPLETE</span>
+      </div>
+    </div>
+
+    <div class="fp-scroll">
+
+      <!-- 01 PATIENT -->
+      <div class="sec"><div class="sec-n">01</div><div class="sec-t">PATIENT DATA</div></div>
+      <label class="fl">FULL NAME</label>
+      <input class="fi" id="f-name" placeholder="Banafsheh Salmani" oninput="u('name',this.value)">
+      <label class="fl">DATE OF TEST</label>
+      <input class="fi" id="f-date" oninput="u('date',this.value)">
+      <label class="fl" style="margin-bottom:5px">GENDER</label>
+      <div class="gtgl">
+        <button class="gtb on" id="btn-f" onclick="sg('Female')">FEMALE</button>
+        <button class="gtb" id="btn-m" onclick="sg('Male')">MALE</button>
+      </div>
+      <div class="gr3">
+        <div><label class="fl">HEIGHT cm</label><input class="fi" type="number" placeholder="164" oninput="u('height',this.value)"></div>
+        <div><label class="fl">WEIGHT kg</label><input class="fi" type="number" placeholder="59" oninput="u('weight',this.value)"></div>
+        <div><label class="fl">AGE yrs</label><input class="fi" type="number" placeholder="38" oninput="u('age',this.value)"></div>
+      </div>
+      <div class="achip" id="bmi-row" style="display:none">
+        <span class="achip-l">BMI AUTO-CALC</span>
+        <span class="achip-v" id="bmi-v" style="color:#00C9A7">—</span>
+      </div>
+
+      <!-- 02 RESULTS -->
+      <div class="sec"><div class="sec-n">02</div><div class="sec-t">TEST RESULTS</div></div>
+      <label class="fl">VO₂ MAX  ml / kg / min</label>
+      <input class="fi mono" type="number" step=".1" id="f-vo2" placeholder="49.1" oninput="u('vo2',this.value)">
+      <div class="clsbdg" id="cls-b" style="display:none">
+        <div class="clsbdg-l">CLASSIFICATION</div>
+        <div class="clsbdg-n" id="cls-n">—</div>
+        <div id="cls-bar" style="margin-top:6px"></div>
+      </div>
+      <div class="gr2">
+        <div><label class="fl">HR MAX bpm</label><input class="fi" type="number" placeholder="173" oninput="u('hrMax',this.value)"></div>
+        <div><label class="fl">HR RECOVERY (1')</label><input class="fi" type="number" placeholder="120" oninput="u('hrRecovery',this.value)"></div>
+      </div>
+      <div class="achip" id="rec-row" style="display:none">
+        <span class="achip-l">RECOVERY RATE</span>
+        <div style="text-align:right">
+          <div class="achip-v" id="rec-v">—</div>
+          <div id="rec-tag" style="font-size:7.5px;letter-spacing:.1em;font-family:var(--font-ui)">—</div>
+        </div>
+      </div>
+
+      <!-- 03 ANALYSIS -->
+      <div class="sec"><div class="sec-n">03</div><div class="sec-t">ANALYSIS TEXT</div></div>
+      <div id="auto-p" style="display:none;padding:7px 9px;background:#080E1C;border:1px solid var(--border);border-radius:3px;font-size:9.5px;color:#3a6a8a;line-height:1.6;margin-bottom:9px">
+        <div style="font-size:7.5px;color:#00C9A740;letter-spacing:.12em;margin-bottom:3px;font-family:var(--font-ui);font-weight:700">AUTO-GENERATED</div>
+        <span id="auto-t"></span>
+      </div>
+      <label class="fl">CUSTOM OVERRIDE <span>(optional)</span></label>
+      <textarea class="fi-ta" id="f-anal" rows="3" placeholder="Leave blank to use auto-generated text…" oninput="u('analysis',this.value)"></textarea>
+      <button class="aibtn" id="aibtn" onclick="genAI()" disabled>
+        ✦ &nbsp;AI GENERATE ANALYSIS
+      </button>
+
+      <!-- 04 RECOMMENDATION -->
+      <div class="sec"><div class="sec-n">04</div><div class="sec-t">RECOMMENDATION</div></div>
+      <textarea class="fi-ta" id="f-rec" rows="2" placeholder="e.g. incorporate interval training to enhance heart rate recovery…" oninput="u('rec',this.value)"></textarea>
+
+      <!-- 05 SCAN IMAGE -->
+      <div class="sec"><div class="sec-n">05</div><div class="sec-t">SCAN IMAGE</div></div>
+      <label class="upz" id="up-lbl">
+        <div class="upz-icon">📎</div>
+        Click to upload scan image
+        <input type="file" accept="image/*" style="display:none" onchange="hScan(this)">
+      </label>
+      <button id="rm-scan" style="display:none;width:100%;padding:4px;background:transparent;border:1px solid #2A1A1A;border-radius:3px;color:#E24B4A;cursor:pointer;font-size:8px;letter-spacing:.1em;margin-bottom:6px;font-family:var(--font-ui)" onclick="rmScan()">REMOVE SCAN</button>
+
+      <!-- 06 AI KEY -->
+      <div class="sec"><div class="sec-n">06</div><div class="sec-t">AI API KEY</div></div>
+      <div class="api-wrap">
+        <label class="fl" style="margin-bottom:4px">ANTHROPIC API KEY <span>(for AI text generation)</span></label>
+        <input class="fi" type="password" id="f-key" placeholder="sk-ant-…" oninput="u('apiKey',this.value)" style="margin-bottom:4px">
+        <div class="api-note">Get your key at console.anthropic.com. Optional — leave blank when using inside Claude.ai where AI generation works automatically.</div>
+      </div>
+
+    </div><!-- /fp-scroll -->
+  </div><!-- /fp -->
+
+  <!-- ══════════════════════════════════════════════════════════════
+       RIGHT: REPORT PANEL
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="rp">
+    <div class="rbar">
+      <span class="rbar-l">LIVE REPORT PREVIEW — A4 FORMAT</span>
+      <button class="pbtn" onclick="window.print()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        PRINT / SAVE AS PDF
+      </button>
+    </div>
+    <div class="rscroll">
+      <div class="a4" id="a4"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ─── State ─────────────────────────────────────────────────────── */
+const S={
+  name:'',gender:'Female',date:'',
+  height:'',weight:'',age:'',
+  vo2:'',hrMax:'',hrRecovery:'',
+  analysis:'',rec:'',scan:null,apiKey:''
+};
+S.date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+document.getElementById('f-date').value=S.date;
+
+/* ─── VO2 Classification Data ───────────────────────────────────── */
+const CLS={
+  Female:[
+    {min:0,max:27,l:'Very Poor',c:'#DC2626'},
+    {min:27,max:31.5,l:'Poor',c:'#D97706'},
+    {min:31.5,max:35.7,l:'Fair',c:'#CA8A04'},
+    {min:35.7,max:41,l:'Good',c:'#16A34A'},
+    {min:41,max:45,l:'Excellent',c:'#2563EB'},
+    {min:45,max:65,l:'Superior',c:'#7C3AED'}
+  ],
+  Male:[
+    {min:0,max:35,l:'Very Poor',c:'#DC2626'},
+    {min:35,max:38.4,l:'Poor',c:'#D97706'},
+    {min:38.4,max:45.2,l:'Fair',c:'#CA8A04'},
+    {min:45.2,max:52,l:'Good',c:'#16A34A'},
+    {min:52,max:56,l:'Excellent',c:'#2563EB'},
+    {min:56,max:75,l:'Superior',c:'#7C3AED'}
+  ]
+};
+
+function getCls(vo2,g){
+  const v=parseFloat(vo2);if(isNaN(v))return null;
+  const segs=CLS[g]||CLS.Male;
+  return segs.find(s=>v>=s.min&&v<s.max)||segs[segs.length-1];
+}
+
+function scaleBarSVG(vo2,g,W,H){
+  const segs=CLS[g]||CLS.Male;
+  const MAX=segs[segs.length-1].max;
+  const v=Math.min(parseFloat(vo2)||0,MAX);
+  const cls=getCls(vo2,g);
+  H=H||24;
+  const barH=10;
+  const rects=segs.map(s=>{
+    const x=(s.min/MAX*W).toFixed(2);
+    const w=Math.max(1,((s.max-s.min)/MAX*W-.5)).toFixed(2);
+    const act=cls&&s.l===cls.l;
+    return `<rect x="${x}" y="0" width="${w}" height="${barH}" fill="${act?s.c:s.c+'2A'}" rx="1.5"/>`;
+  }).join('');
+  const labels=segs.map(s=>{
+    const cx=((s.min+(s.max-s.min)/2)/MAX*W).toFixed(2);
+    return `<text x="${cx}" y="${H-1}" text-anchor="middle" font-size="5.5" fill="#9AAABB" font-family="Inter,sans-serif">${s.l}</text>`;
+  }).join('');
+  const mx=(v/MAX*W).toFixed(2);
+  const marker=v>0&&cls
+    ?`<polygon points="${mx},${barH+3} ${parseFloat(mx)-4},1 ${parseFloat(mx)+4},1" fill="${cls.c}"/>`
+    :'';
+  return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${rects}${marker}${labels}</svg>`;
+}
+
+/* ─── Computed Values ────────────────────────────────────────────── */
+function calc(){
+  const h=parseFloat(S.height),w=parseFloat(S.weight);
+  const bmi=(h&&w&&h>0)?(w/((h/100)**2)).toFixed(1):null;
+  const hrm=parseFloat(S.hrMax),hrr=parseFloat(S.hrRecovery);
+  const rp=(hrm&&hrr)?Math.round((hrm-hrr)/hrm*100):null;
+  const cls=getCls(S.vo2,S.gender);
+  const ti=S.gender==='Female'?'Ms.':'Mr.';
+  const pr=S.gender==='Female'?'Her':'His';
+  const auto=(S.name&&S.vo2&&S.hrMax)
+    ?`${ti} ${S.name} achieved a peak heart rate of ${S.hrMax} bpm during maximum exertion. ${pr} heart rate dropped to ${S.hrRecovery||'—'} bpm after 1 minute of recovery, indicating a recovery rate of ${rp!==null?rp:'—'}%${rp!==null?' — '+(rp>=30?'meeting':'below')+' the ≥30% threshold typically observed in elite athletes':''}.${(S.vo2&&cls)?' Peak VO₂ Max of '+S.vo2+' ml/kg/min corresponds to a '+cls.l+' aerobic fitness level.':''}`
+    :'';
+  return{bmi,rp,cls,ti,pr,auto};
+}
+
+/* ─── Updater ────────────────────────────────────────────────────── */
+function u(k,v){S[k]=v;refresh();}
+function sg(g){
+  S.gender=g;
+  document.getElementById('btn-f').className='gtb'+(g==='Female'?' on':'');
+  document.getElementById('btn-m').className='gtb'+(g==='Male'?' on':'');
+  refresh();
+}
+
+/* ─── Refresh UI ─────────────────────────────────────────────────── */
+function refresh(){
+  const{bmi,rp,cls,ti,pr,auto}=calc();
+
+  // BMI chip
+  const bmiR=document.getElementById('bmi-row');
+  if(bmi){bmiR.style.display='flex';document.getElementById('bmi-v').textContent=bmi+' kg/m²';}
+  else bmiR.style.display='none';
+
+  // Classification badge
+  const clsB=document.getElementById('cls-b');
+  if(cls&&S.vo2){
+    clsB.style.display='block';
+    clsB.style.background=cls.c+'14';clsB.style.borderColor=cls.c+'40';
+    const cn=document.getElementById('cls-n');cn.style.color=cls.c;cn.textContent=cls.l;
+    document.getElementById('cls-bar').innerHTML=scaleBarSVG(S.vo2,S.gender,210,22);
+  }else clsB.style.display='none';
+
+  // Recovery chip
+  const recR=document.getElementById('rec-row');
+  if(rp!==null){
+    recR.style.display='flex';
+    const elite=rp>=30;
+    const rv=document.getElementById('rec-v');rv.style.color=elite?'#00C9A7':'#E24B4A';rv.textContent=rp+'%';
+    const rt=document.getElementById('rec-tag');rt.style.color=elite?'#00C9A770':'#E24B4A70';rt.textContent=elite?'ELITE RANGE ✓':'BELOW ELITE ⚠';
+  }else recR.style.display='none';
+
+  // Auto-text preview
+  const ap=document.getElementById('auto-p');
+  if(auto&&!S.analysis){ap.style.display='block';document.getElementById('auto-t').textContent=auto;}
+  else ap.style.display='none';
+
+  // Status
+  const ready=S.name&&S.vo2&&S.hrMax&&S.hrRecovery;
+  document.getElementById('sdot').style.background=ready?'#00C9A7':'#E24B4A';
+  const st=document.getElementById('stxt');st.style.color=ready?'#00C9A7':'#E24B4A';st.textContent=ready?'REPORT READY':'INCOMPLETE';
+  document.getElementById('aibtn').disabled=!(S.name&&S.vo2&&S.hrMax);
+
+  renderReport(bmi,rp,cls,ti,pr,auto);
+}
+
+/* ─── Render A4 Report ────────────────────────────────────────────── */
+function renderReport(bmi,rp,cls,ti,pr,auto){
+  const dispAnal=S.analysis||auto;
+  const nm=S.name||'—';
+  const rv=rp!==null?rp+'%':'—';
+  const ru=rp!==null?(rp>=30?'ELITE ✓':'BELOW ELITE'):'';
+  const bmiStr=bmi?`${S.weight} kg  /  ${bmi} kg/m²`:'—';
+
+  const scanHtml=S.scan
+    ?`<img src="${S.scan}" style="width:100%;display:block" alt="Scan report">`
+    :`<div class="rscan-ph">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#B0C4D8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Upload scan via form panel
+      </div>`;
+
+  const scaleHtml=cls
+    ?`<div class="rscale">
+        <div class="rscale-lbl">VO₂ MAX CLASSIFICATION SCALE — ${S.gender.toUpperCase()}</div>
+        ${scaleBarSVG(S.vo2,S.gender,560,26)}
+      </div>`
+    :'';
+
+  const cards=[
+    {l:'VO₂ MAX',v:S.vo2||'—',u:'ml / kg / min',c:'#0D2A52',bg:'#EBF2FA'},
+    {l:'HR MAX',v:S.hrMax||'—',u:'bpm',c:'#1E75BE',bg:'#EBF4FF'},
+    {l:"HR RECOVERY (1')",v:S.hrRecovery||'—',u:'bpm',c:'#008F88',bg:'#E3F4F3'},
+    {l:'RECOVERY RATE',v:rv,u:ru,c:'#2D7A3F',bg:'#EBF6EE'},
+  ];
+
+  document.getElementById('a4').innerHTML=`
+    <!-- HEADER -->
+    <div class="rh">
+      <div>
+        <div style="display:flex;align-items:center">
+          <span class="rh-hms">HMS</span>
+          <span class="rh-div"></span>
+          <div><div class="rh-fifa">FIFA</div><div class="rh-coe">MEDICAL CENTRE OF EXCELLENCE</div></div>
+        </div>
+        <div class="rh-ar">مركز الفيفا الطبي المتميز &nbsp;·&nbsp; DUBAI &nbsp;دبـيـ</div>
+      </div>
+      <div class="rh-date">${S.date||'—'}, Dubai</div>
+    </div>
+
+    <!-- TITLE -->
+    <div class="rt">
+      <div class="rt-main">AEROBIC VO₂ MAX ANALYSIS</div>
+      <div class="rt-sub">AEROBIC AND GAIT ANALYSIS CRITERIA</div>
+      <div class="rt-rule"></div>
+    </div>
+
+    <!-- PATIENT BAR -->
+    <div class="rpat">
+      ${[['PATIENT',nm],['GENDER',S.gender||'—'],['HEIGHT',S.height?S.height+' cm':'—'],['WEIGHT / BMI',S.weight?bmiStr:'—']]
+        .map(([l,v])=>`<div class="rpat-c"><div class="rpat-l">${l}</div><div class="rpat-v">${v}</div></div>`)
+        .join('')}
+    </div>
+
+    <!-- PROTOCOL -->
+    <div class="rprot">
+      <strong style="color:#0D2A52">PROTOCOL</strong>
+      &nbsp; · &nbsp; Starting speed 8 km/h &nbsp;|&nbsp; Increase: +0.5 km/h every 1 min &nbsp;|&nbsp; Inclination: 0° throughout
+    </div>
+
+    <!-- KEY RESULTS LABEL -->
+    <div class="rsb" style="background:#0D2A52;border-radius:3px 3px 0 0">KEY RESULTS</div>
+
+    <!-- METRIC CARDS -->
+    <div class="rcards">
+      ${cards.map(m=>`
+        <div class="rcard" style="background:${m.bg}">
+          <div class="rcard-hdr" style="background:${m.c}">${m.l}</div>
+          <div class="rcard-val" style="color:${m.c}">${m.v}</div>
+          <div class="rcard-unit">${m.u}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- VO2 SCALE -->
+    ${scaleHtml}
+
+    <!-- SCAN + ANALYSIS -->
+    <div class="r2c">
+      <div class="rscan">
+        <div class="rsb" style="background:#0D2A52">TEST SCAN REPORT</div>
+        ${scanHtml}
+      </div>
+      <div class="ranal">
+        <div class="rsb" style="background:#0D2A52">ANALYSIS</div>
+        <div class="ranal-txt">
+          ${dispAnal||'<em style="color:#AABBC8">Complete the form to generate the analysis.</em>'}
+        </div>
+        <div class="rsb" style="background:#1E75BE">RECOMMENDATION</div>
+        <div class="rrec-txt">
+          ${S.rec
+            ?`Given these results, it is advisable for <strong style="color:#0D2A52">${nm}</strong> to ${S.rec}.`
+            :'<em style="color:#AABBC8">Enter recommendation in the form panel.</em>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGN-OFF -->
+    <div class="rfoot">
+      <div class="rfoot-so">
+        For further information, please do not hesitate to contact us.<br>Sincerely,
+      </div>
+      <div style="text-align:right">
+        <div class="rfoot-sn">Philippe Chomier</div>
+        <div class="rfoot-st">Head of Rehabilitation</div>
+      </div>
+    </div>
+    <div class="rfoot-ct">
+      www.fmcedubai.ae &nbsp;&nbsp;|&nbsp;&nbsp; T. +971 4 224 5577 &nbsp;&nbsp;|&nbsp;&nbsp; F. +971 4 224 4815
+    </div>
+  `;
+}
+
+/* ─── Scan Upload ────────────────────────────────────────────────── */
+function hScan(inp){
+  const f=inp.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    S.scan=e.target.result;
+    document.getElementById('up-lbl').innerHTML=
+      `<div class="upz-icon" style="color:#00C9A7">✓</div>
+       <span style="color:#00C9A7">Uploaded — click to replace</span>
+       <input type="file" accept="image/*" style="display:none" onchange="hScan(this)">`;
+    document.getElementById('rm-scan').style.display='block';
+    refresh();
+  };
+  rd.readAsDataURL(f);
+}
+function rmScan(){
+  S.scan=null;
+  document.getElementById('rm-scan').style.display='none';
+  document.getElementById('up-lbl').innerHTML=
+    `<div class="upz-icon">📎</div>
+     Click to upload scan image
+     <input type="file" accept="image/*" style="display:none" onchange="hScan(this)">`;
+  refresh();
+}
+
+/* ─── AI Text Generation ────────────────────────────────────────── */
+async function genAI(){
+  const btn=document.getElementById('aibtn');
+  btn.disabled=true;btn.textContent='⟳  GENERATING…';
+  const{cls,ti}=calc();
+  const rp=S.hrMax&&S.hrRecovery?Math.round((parseFloat(S.hrMax)-parseFloat(S.hrRecovery))/parseFloat(S.hrMax)*100):null;
+
+  const headers={'Content-Type':'application/json'};
+  if(S.apiKey&&S.apiKey.trim()) headers['x-api-key']=S.apiKey.trim();
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers,
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:
+          `You are a sports medicine physician at HMS FIFA Medical Centre of Excellence, Dubai.
+Write a professional 3-sentence clinical analysis paragraph for a VO₂ Max report.
+
+Patient: ${ti} ${S.name} | Gender: ${S.gender}${S.age?' | Age: '+S.age:''}
+VO₂ Max: ${S.vo2} ml/kg/min (${cls?cls.l:'—'})
+HR Max: ${S.hrMax} bpm
+HR Recovery after 1 min: ${S.hrRecovery} bpm
+Recovery rate: ${rp}%
+
+Write ONLY the 3 sentences. Start with the patient's title and name. Reference all specific values. Note whether recovery ≥30% meets the elite threshold. End with the VO₂ fitness level classification.`}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content.map(c=>c.text||'').join('').trim();
+    S.analysis=text;
+    document.getElementById('f-anal').value=text;
+    refresh();
+  }catch(e){
+    console.error(e);
+    alert('AI generation failed. If using this file locally, add your Anthropic API key in Section 06.');
+  }
+
+  btn.innerHTML='✦ &nbsp;AI GENERATE ANALYSIS';
+  btn.disabled=false;
+}
+
+/* ─── Init ───────────────────────────────────────────────────────── */
+refresh();
+</script>
+</body>
+</html>
